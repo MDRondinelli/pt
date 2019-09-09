@@ -1,0 +1,5 @@
+.vs
+pt/include/CL
+pt/lib/OpenCL.lib
+pt/bin
+pt/build
