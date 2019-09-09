@@ -48,8 +48,7 @@ void Integrator::Li(const Scene &scene, std::vector<Ray> &rays,
   cl::Buffer dResults{CL_MEM_WRITE_ONLY, sizeof(glm::vec4) * rays.size()};
 
   cl::NDRange global{rays.size()};
-  cl::NDRange local{256};
-  cl::EnqueueArgs enqueueArgs{global, local};
+  cl::EnqueueArgs enqueueArgs{global};
   auto event = mKernel(enqueueArgs, scene.getBxdfBuffer(),
                        scene.getVertexBuffer(), scene.getTriangleBuffer(),
                        scene.getTriangleCount(), dSeeds, dRays, dResults);
