@@ -38,7 +38,13 @@ int main() {
                     (float)film.getSize().x / (float)film.getSize().y};
 
   pt::Sampler sampler{1024, 32, 32};
-  pt::Integrator integrator;
+  pt::Integrator integrator{64 * 64 * sampler.getSampleCount()};
+
+  std::vector<pt::Ray> rays;
+  rays.reserve(integrator.getMaxItems());
+
+  std::vector<glm::vec4> results;
+  results.reserve(integrator.getMaxItems());
 
   for (auto tileY = 0; tileY < film.getSize().y; tileY += 64) {
     auto minY = tileY;
@@ -48,7 +54,8 @@ int main() {
       auto minX = tileX;
       auto maxX = glm::min(tileX + 64, film.getSize().x);
 
-      std::vector<pt::Ray> rays;
+      rays.clear();
+      results.clear();
 
       for (auto y = minY; y < maxY; ++y) {
         for (auto x = minX; x < maxX; ++x) {
@@ -63,7 +70,6 @@ int main() {
         }
       }
 
-      std::vector<glm::vec4> results;
       integrator.Li(scene, rays, results);
 
       for (auto y = minY; y < maxY; ++y)

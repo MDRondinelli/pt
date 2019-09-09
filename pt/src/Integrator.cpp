@@ -31,36 +31,59 @@ cl::Program createProgram() {
 }
 } // namespace
 
-Integrator::Integrator()
-    : mProgram{createProgram()}, mKernel{mProgram, "Li"},
-      mRng{std::random_device{}()} {}
+Integrator::Integrator(size_t maxItems)
+    : mMaxItems{maxItems},
+      mSeedBuffer{CL_MEM_READ_WRITE, mMaxItems * sizeof(glm::uvec2)},
+      mRayBuffer{CL_MEM_READ_ONLY, mMaxItems * sizeof(pt::Ray)},
+      mResultBuffer{CL_MEM_WRITE_ONLY, mMaxItems * sizeof(glm::vec4)},
+      mProgram{createProgram()},
+      mKernel{mProgram, "Li"},
+      mRng{std::random_device{}()} {
+  std::vector<glm::uvec2> seeds;
+  seeds.reserve(mMaxItems);
+  for (size_t i = 0; i < mMaxItems; ++i)
+    seeds.emplace_back(mRng(), mRng());
+  cl::copy(seeds.begin(), seeds.end(), mSeedBuffer);
+}
 
 void Integrator::Li(const Scene &scene, std::vector<Ray> &rays,
                     std::vector<glm::vec4> &results) {
-  std::vector<glm::uvec2> seeds;
-  seeds.reserve(rays.size());
-
-  for (size_t i = 0; i < rays.size(); ++i)
-    seeds.emplace_back(mRng(), mRng());
-
-  cl::Buffer dSeeds{seeds.begin(), seeds.end(), false};
-  cl::Buffer dRays{rays.begin(), rays.end(), true};
-  cl::Buffer dResults{CL_MEM_WRITE_ONLY, sizeof(glm::vec4) * rays.size()};
+  {
+    auto begin = std::chrono::high_resolution_clock::now();
+    cl::copy(rays.begin(), rays.end(), mRayBuffer);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> duration = end - begin;
+    std::cout << "Ray copy took " << duration.count() << "s\n";
+  }
 
   cl::NDRange global{rays.size()};
   cl::EnqueueArgs enqueueArgs{global};
-  auto event = mKernel(enqueueArgs, scene.getBxdfBuffer(),
-                       scene.getVertexBuffer(), scene.getTriangleBuffer(),
-                       scene.getTriangleCount(), dSeeds, dRays, dResults);
+  auto event =
+      mKernel(enqueueArgs, scene.getBxdfBuffer(), scene.getVertexBuffer(),
+              scene.getTriangleBuffer(), scene.getTriangleCount(), mSeedBuffer,
+              mRayBuffer, mResultBuffer);
 
-  auto begin = std::chrono::high_resolution_clock::now();
-  event.wait();
-  auto end = std::chrono::high_resolution_clock::now();
+  {
+    auto begin = std::chrono::high_resolution_clock::now();
+    event.wait();
+    auto end = std::chrono::high_resolution_clock::now();
 
-  std::chrono::duration<float> duration = end - begin;
-  std::cout << "Took " << duration.count() << "s\n";
+    std::chrono::duration<float> duration = end - begin;
+    std::cout << "Kernel took " << duration.count() << "s\n";
+  }
 
-  results.resize(rays.size());
-  cl::copy(dResults, results.begin(), results.end());
+  {
+    auto begin = std::chrono::high_resolution_clock::now();
+    results.resize(rays.size());
+    cl::copy(mResultBuffer, results.begin(), results.end());
+    auto end = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<float> duration = end - begin;
+    std::cout << "Result copy took " << duration.count() << "s\n";
+  }
+}
+
+size_t Integrator::getMaxItems() const {
+  return mMaxItems;
 }
 } // namespace pt
