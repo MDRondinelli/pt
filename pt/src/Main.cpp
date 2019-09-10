@@ -11,14 +11,21 @@
 int main() {
   pt::Scene scene;
 
-  auto monkeyMesh = std::make_shared<pt::Mesh>("res/cornell.obj");
-  auto monkeyBxdf =
-      std::make_shared<pt::Bxdf>(pt::DiffuseBrdf{glm::vec3{0.9f}});
-  auto monkeyTransform = glm::identity<glm::mat4>();
-  auto monkeyPrimitive =
-      std::make_shared<pt::Primitive>(monkeyMesh, monkeyBxdf, monkeyTransform);
+  auto bxdf = std::make_shared<pt::Bxdf>(pt::DiffuseBrdf{glm::vec3{0.25f}});
+  auto sphereMesh = std::make_shared<pt::Mesh>("res/sphere.obj");
 
-  scene.add(monkeyPrimitive);
+  auto sphereTransform1 =
+      glm::translate(glm::identity<glm::mat4>(), glm::vec3{-1.0f, 0.0f, 0.0f});
+  auto spherePrimitive1 =
+      std::make_shared<pt::Primitive>(sphereMesh, bxdf, sphereTransform1);
+
+  auto sphereTransform2 =
+      glm::translate(glm::identity<glm::mat4>(), glm::vec3{1.0f, 0.0f, 0.0f});
+  auto spherePrimitive2 =
+      std::make_shared<pt::Primitive>(sphereMesh, bxdf, sphereTransform2);
+
+  scene.add(spherePrimitive1);
+  scene.add(spherePrimitive2);
   scene.updateDeviceRepresentation();
 
   glm::vec3 eye{0.0f, 0.0f, 4.0f};
