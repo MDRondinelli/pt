@@ -1,9 +1,8 @@
 #pragma once
 
-#include <random>
-
 #include <CL/cl2.hpp>
 
+#include "Film.h"
 #include "Ray.h"
 #include "Scene.h"
 
@@ -15,17 +14,18 @@ class Integrator {
   cl::Buffer mResultBuffer;
 
   cl::Program mProgram;
-  cl::KernelFunctor<cl::Buffer, cl::Buffer, cl::Buffer, cl_uint, cl::Buffer,
-                    cl::Buffer, cl::Buffer>
+  cl::KernelFunctor<cl_int2, cl_int2, cl_int2, cl_int2, Camera, cl::Buffer,
+                    cl::Buffer, cl::Buffer, cl_uint, cl::Buffer, cl::Buffer,
+                    cl::Buffer>
       mKernel;
 
-  std::mt19937 mRng;
+  std::vector<glm::vec4> mResults;
 
 public:
   Integrator(size_t maxItems);
 
-  void Li(const Scene &scene, std::vector<Ray> &rays,
-          std::vector<glm::vec4> &results);
+  void Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
+          glm::ivec2 tileSize, glm::ivec2 sampleCount);
 
   size_t getMaxItems() const;
 };

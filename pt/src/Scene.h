@@ -4,11 +4,14 @@
 
 #include <CL/cl2.hpp>
 
+#include "Camera.h"
 #include "Primitive.h"
 
 namespace pt {
 class Scene {
   std::vector<std::shared_ptr<Primitive>> mPrimitives;
+  std::shared_ptr<Camera> mCamera;
+  
   cl::Buffer mBxdfBuffer;
   cl::Buffer mVertexBuffer;
   cl::Buffer mTriangleBuffer;
@@ -17,6 +20,9 @@ class Scene {
 public:
   void add(std::shared_ptr<Primitive> primitive);
   void remove(std::shared_ptr<Primitive> primitive);
+
+  std::shared_ptr<Camera> getCamera() const;
+  void setCamera(std::shared_ptr<Camera> camera);
 
   void updateDeviceRepresentation();
 

@@ -2,10 +2,11 @@
 #include <fstream>
 #include <iostream>
 
+#include <glm/ext.hpp>
+
 #include "Camera.h"
 #include "Film.h"
 #include "Integrator.h"
-#include "Sampler.h"
 
 int main() {
   pt::Scene scene;
@@ -33,18 +34,13 @@ int main() {
   cameraTransform[2] = glm::vec4{localZ, 0.0f};
   cameraTransform[3] = glm::vec4{eye, 1.0f};
 
-  pt::Film film{{512, 512}};
-  pt::Camera camera{cameraTransform, glm::radians(45.0f),
-                    (float)film.getSize().x / (float)film.getSize().y};
+  pt::Film film{{1920, 1080}};
+  auto camera = std::make_shared<pt::Camera>(
+      cameraTransform, glm::radians(45.0f),
+      (float)film.getSize().x / (float)film.getSize().y);
+  scene.setCamera(camera);
 
-  pt::Sampler sampler{1024, 32, 32};
-  pt::Integrator integrator{64 * 64 * sampler.getSampleCount()};
-
-  std::vector<pt::Ray> rays;
-  rays.reserve(integrator.getMaxItems());
-
-  std::vector<glm::vec4> results;
-  results.reserve(integrator.getMaxItems());
+  pt::Integrator integrator{64 * 64 * 32 * 32};
 
   for (auto tileY = 0; tileY < film.getSize().y; tileY += 64) {
     auto minY = tileY;
@@ -54,31 +50,8 @@ int main() {
       auto minX = tileX;
       auto maxX = glm::min(tileX + 64, film.getSize().x);
 
-      rays.clear();
-      results.clear();
-
-      for (auto y = minY; y < maxY; ++y) {
-        for (auto x = minX; x < maxX; ++x) {
-          for (auto i = 0; i < sampler.getSampleCount(); ++i) {
-            auto random = sampler.sample();
-            glm::vec2 position;
-            position.x = (x + random.x) / film.getSize().x;
-            position.y = (y + random.y) / film.getSize().y;
-
-            rays.emplace_back(camera.sample(position, glm::vec2{0.0f}));
-          }
-        }
-      }
-
-      integrator.Li(scene, rays, results);
-
-      for (auto y = minY; y < maxY; ++y)
-        for (auto x = minX; x < maxX; ++x)
-          for (auto i = 0; i < sampler.getSampleCount(); ++i)
-            film.expose({x, y},
-                        results[sampler.getSampleCount() *
-                                    ((maxX - minX) * (y - minY) + (x - minX)) +
-                                i]);
+      integrator.Li(scene, film, {minX, minY}, {maxX - minX, maxY - minY},
+                    {32, 32});
     }
   }
 

@@ -15,6 +15,12 @@ void Scene::remove(std::shared_ptr<Primitive> primitive) {
     mPrimitives.erase(it);
 }
 
+std::shared_ptr<Camera> Scene::getCamera() const { return mCamera; }
+
+void Scene::setCamera(std::shared_ptr<Camera> camera) {
+  mCamera = std::move(camera);
+}
+
 void Scene::updateDeviceRepresentation() {
   std::vector<Bxdf> bxdfs;
   std::unordered_map<Bxdf *, uint32_t> bxdfMap;

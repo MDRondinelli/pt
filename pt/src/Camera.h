@@ -1,22 +1,19 @@
 #pragma once
 
-#include <glm/ext.hpp>
-
 #include "Ray.h"
 
 namespace pt {
-class Camera {
-  glm::mat4 mTransform;
-  float mFov;
-  float mAspect;
-  float mAperture;
-  float mFocusDistance;
+struct Camera {
+  alignas(16) glm::mat4 transform;
+  float fov;
+  float aspect;
 
-public:
-  Camera(const glm::mat4 &transform, float fov, float aspect, float aperture,
-         float focusDistance);
   Camera(const glm::mat4 &transform, float fov, float aspect);
-
-  Ray sample(glm::vec2 position, glm::vec2 random) const;
+  Ray sample(glm::vec2 position) const;
 };
+
+static_assert(sizeof(Camera) == 80);
+static_assert(offsetof(Camera, transform) == 0);
+static_assert(offsetof(Camera, fov) == 64);
+static_assert(offsetof(Camera, aspect) == 68);
 } // namespace pt
