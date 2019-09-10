@@ -12,7 +12,7 @@ int main() {
   pt::Scene scene;
 
   auto bxdf = std::make_shared<pt::Bxdf>(pt::DiffuseBrdf{glm::vec3{0.25f}});
-  auto sphereMesh = std::make_shared<pt::Mesh>("res/sphere.obj");
+  auto sphereMesh = std::make_shared<pt::Mesh>("res/monkey.obj");
 
   auto sphereTransform1 =
       glm::translate(glm::identity<glm::mat4>(), glm::vec3{-1.0f, 0.0f, 0.0f});

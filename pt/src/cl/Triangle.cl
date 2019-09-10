@@ -30,7 +30,7 @@ bool rayTriangle(Ray ray, Vertex v0, Vertex v1, Vertex v2, Intersection *out) {
 
   out->t = t;
   out->position = ray.o + t * ray.d;
-  out->normal = normalize(n);
+  out->normal = normalize((1.0f - u - v) * v0.normal + u * v1.normal + v * v2.normal);
 
   return true;
 }
