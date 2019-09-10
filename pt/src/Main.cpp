@@ -40,8 +40,9 @@ int main() {
       (float)film.getSize().x / (float)film.getSize().y);
   scene.setCamera(camera);
 
-  pt::Integrator integrator{64 * 64 * 32 * 32};
+  pt::Integrator integrator{64 * 64 * 4 * 4};
 
+  auto begin = std::chrono::high_resolution_clock::now();
   for (auto tileY = 0; tileY < film.getSize().y; tileY += 64) {
     auto minY = tileY;
     auto maxY = glm::min(tileY + 64, film.getSize().y);
@@ -51,9 +52,12 @@ int main() {
       auto maxX = glm::min(tileX + 64, film.getSize().x);
 
       integrator.Li(scene, film, {minX, minY}, {maxX - minX, maxY - minY},
-                    {32, 32});
+                    {4, 4});
     }
   }
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<float> duration = end - begin;
+  std::cout << "Took " << duration.count() << "s\n";
 
   auto image = film.develop();
 

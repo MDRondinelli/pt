@@ -72,7 +72,7 @@ void Integrator::Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<float> duration = end - begin;
-    std::cout << "Kernel took " << duration.count() << "s\n";
+    //std::cout << "Kernel took " << duration.count() << "s\n";
   }
 
   {
@@ -82,7 +82,7 @@ void Integrator::Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<float> duration = end - begin;
-    std::cout << "Result copy took " << duration.count() << "s\n";
+    //std::cout << "Result copy took " << duration.count() << "s\n";
   }
 
   {
@@ -96,7 +96,7 @@ void Integrator::Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<float> duration = end - begin;
-    std::cout << "Exposure took " << duration.count() << "s\n";
+    //std::cout << "Exposure took " << duration.count() << "s\n";
   }
 }
 

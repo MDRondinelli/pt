@@ -15,7 +15,7 @@ Ray generateRay(const Camera *camera, float2 position) {
   homo = matrixMul4(camera->transform, homo);
   ray.d = (float3)(homo.x, homo.y, homo.z);
 
-  ray.tmin = 0.001f;
+  ray.tmin = 0.0f;
   ray.tmax = 1000.0f;
 
   return ray;
@@ -66,7 +66,7 @@ __kernel void Li(int2 imageSize,
       BxdfSample sample = Bxdf_sample(bxdf, hit.normal, -ray.d, rand2(&seeds[id]));
       throughput *= sample.f / sample.pdf * fabs(dot(hit.normal, sample.wi));
 
-      ray.o = hit.position;
+      ray.o = hit.position + hit.normal * 0.0001f;
       ray.d = sample.wi;
     } else {
       color += throughput * bgColor;
