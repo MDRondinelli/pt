@@ -17,12 +17,12 @@ struct DiffuseBrdf {
 
 typedef struct DiffuseBrdf DiffuseBrdf;
 
-float3 DiffuseBrdf_f(__global const DiffuseBrdf *ptr) {
-  return ptr->color * (float3)(M_1_PI);
+float3 DiffuseBrdf_f(__global const DiffuseBrdf *ptr, float3 n, float3 wi) {
+  return ptr->color * (float3)(M_1_PI) * step(0.0f, dot(n, wi));
 }
 
 float DiffuseBrdf_pdf(float3 n, float3 wi) {
-  return fabs(dot(n, wi)) * M_1_PI;
+  return max(0.0f, dot(n, wi)) * M_1_PI;
 }
 
 BxdfSample DiffuseBrdf_sample(__global const DiffuseBrdf *ptr, float3 n, float2 random) {
@@ -76,6 +76,7 @@ enum BxdfType {
 
 struct Bxdf {
   uint type;
+  float3 le;
   union {
     DiffuseBrdf diffuseBrdf;
     SpecularBrdf specularBrdf;
@@ -89,7 +90,7 @@ typedef struct Bxdf Bxdf;
 float3 Bxdf_f(__global const Bxdf *bxdf, float3 n, float3 wo, float3 wi) {
   switch (bxdf->type) {
   case DIFFUSE_BRDF:
-    return DiffuseBrdf_f(&bxdf->diffuseBrdf);
+    return DiffuseBrdf_f(&bxdf->diffuseBrdf, n, wi);
   default:
     return (float3)(0.0f);
   }
@@ -105,17 +106,20 @@ float Bxdf_pdf(__global const Bxdf *bxdf, float3 n, float3 wo, float3 wi) {
 }
 
 BxdfSample Bxdf_sample(__global const Bxdf *bxdf, float3 n, float3 wo, float2 random) {
+  BxdfSample ret;
+
   switch (bxdf->type) {
   case DIFFUSE_BRDF:
-    return DiffuseBrdf_sample(&bxdf->diffuseBrdf, n, random);
-  default: {
-    BxdfSample ret;
+    ret = DiffuseBrdf_sample(&bxdf->diffuseBrdf, n, random);
+    break;
+  default:
     ret.wi = (float3)(0.0f);
     ret.f = (float3)(0.0f);
     ret.wi = 0.0f;
-    return ret;
+    break;
   }
-  }
+
+  return ret;
 }
 
 #endif

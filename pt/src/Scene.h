@@ -16,6 +16,8 @@ class Scene {
   cl::Buffer mVertexBuffer;
   cl::Buffer mTriangleBuffer;
   uint32_t mTriangleCount;
+  cl::Buffer mAreaLightBuffer;
+  uint32_t mAreaLightCount;
 
 public:
   void add(std::shared_ptr<Primitive> primitive);
@@ -30,5 +32,7 @@ public:
   const cl::Buffer &getVertexBuffer() const;
   const cl::Buffer &getTriangleBuffer() const;
   uint32_t getTriangleCount() const;
+  const cl::Buffer &getAreaLightBuffer() const;
+  uint32_t getAreaLightCount() const;
 };
 } // namespace pt

@@ -46,6 +46,8 @@ void Scene::updateDeviceRepresentation() {
   std::vector<Triangle> triangles;
   triangles.reserve(indexCount / 3);
 
+  std::vector<uint32_t> areaLights;
+
   for (auto &primitive : mPrimitives) {
     auto &mesh = *primitive->getMesh();
     auto &meshVertices = mesh.getVertices();
@@ -60,6 +62,9 @@ void Scene::updateDeviceRepresentation() {
       triangle.v1 = vertices.size() + meshIndices[i + 1];
       triangle.v2 = vertices.size() + meshIndices[i + 2];
       triangles.emplace_back(triangle);
+
+      if (bxdf.le != glm::vec3{0.0f})
+        areaLights.emplace_back(i / 3);
     }
 
     for (auto vertex : meshVertices) {
@@ -73,6 +78,8 @@ void Scene::updateDeviceRepresentation() {
   mVertexBuffer = cl::Buffer{vertices.begin(), vertices.end(), true};
   mTriangleBuffer = cl::Buffer{triangles.begin(), triangles.end(), true};
   mTriangleCount = triangles.size();
+  mAreaLightBuffer = cl::Buffer{areaLights.begin(), areaLights.end(), true};
+  mAreaLightCount = areaLights.size();
 }
 
 const cl::Buffer &Scene::getBxdfBuffer() const { return mBxdfBuffer; }
@@ -82,4 +89,8 @@ const cl::Buffer &Scene::getVertexBuffer() const { return mVertexBuffer; }
 const cl::Buffer &Scene::getTriangleBuffer() const { return mTriangleBuffer; }
 
 uint32_t Scene::getTriangleCount() const { return mTriangleCount; }
+
+const cl::Buffer &Scene::getAreaLightBuffer() const { return mAreaLightBuffer; }
+
+uint32_t Scene::getAreaLightCount() const { return mAreaLightCount; }
 } // namespace pt

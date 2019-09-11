@@ -3,9 +3,9 @@
 
 struct Intersection {
   float t;
-  float3 position;
-  float3 normal;
-  uint bxdf;
+  float u;
+  float v;
+  uint triangle;
 };
 
 typedef struct Intersection Intersection;

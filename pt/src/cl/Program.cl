@@ -30,8 +30,9 @@ __kernel void Li(int2 imageSize,
                  __global const Vertex *vertexBuffer,
                  __global const Triangle *triangleBuffer,
                  uint triangleCount,
+                 __global const uint *areaLightBuffer,
+                 uint areaLightCount,
                  __global uint2 *seeds,
-                 __global const Ray *rays,
                  __global float3 *results) {
   int id = get_global_id(0);
   int sampleIndex = id % (sampleCount.x * sampleCount.y);
@@ -52,21 +53,75 @@ __kernel void Li(int2 imageSize,
   scene.triangleBuffer = triangleBuffer;
   scene.triangleCount = triangleCount;
 
-  //Ray ray = rays[id];
   Intersection hit;
 
-  float3 bgColor = (float3)(1.0f);
+  float3 bgColor = (float3)(0.0f);
   float3 color = (float3)(0.0f);
   float3 throughput = (float3)(1.0f);
 
-  for (int i = 0; i < 4; ++i) {
+  for (int i = 0; i < 2; ++i) {
     if (rayScene(ray, &scene, &hit)) {
-      __global const Bxdf *bxdf = &bxdfBuffer[hit.bxdf];
+      __global const Bxdf *bxdf = &bxdfBuffer[triangleBuffer[hit.triangle].bxdf];
 
-      BxdfSample sample = Bxdf_sample(bxdf, hit.normal, -ray.d, rand2(&seeds[id]));
-      throughput *= sample.f / sample.pdf * fabs(dot(hit.normal, sample.wi));
+      float3 n0 = vertexBuffer[triangleBuffer[hit.triangle].v0].normal;
+      float3 n1 = vertexBuffer[triangleBuffer[hit.triangle].v1].normal;
+      float3 n2 = vertexBuffer[triangleBuffer[hit.triangle].v2].normal;
+      float3 position = ray.o + hit.t * ray.d;
+      float3 normal = normalize((1.0f - hit.u - hit.v) * n0 + hit.u * n1 + hit.v * n2);
+      
+      if (areaLightCount != 0) {
+        uint areaLightIndex = rand(&seeds[id]) * areaLightCount;
+        uint areaLight = areaLightBuffer[areaLightIndex];
 
-      ray.o = hit.position + hit.normal * 0.0001f;
+        float3 le = bxdfBuffer[triangleBuffer[areaLight].bxdf].le;
+        float3 v0 = vertexBuffer[triangleBuffer[areaLight].v0].position;
+        float3 v1 = vertexBuffer[triangleBuffer[areaLight].v1].position;
+        float3 v2 = vertexBuffer[triangleBuffer[areaLight].v2].position;
+        float lightPdf = 2.0f / length(cross(v1 - v0, v2 - v0));
+
+        {
+          float3 samplePos = sampleTriangle(v0, v1, v2, rand2(&seeds[id]));
+          float3 wi = normalize(samplePos - position);
+          float3 bxdfF = Bxdf_f(bxdf, normal, -ray.d, wi);
+          float bxdfPdf = Bxdf_pdf(bxdf, normal, -ray.d, wi);
+
+          float weight = lightPdf / (lightPdf * lightPdf + bxdfPdf * bxdfPdf);
+
+          Ray shadowRay;
+          shadowRay.o = position + normal * 0.0001f;
+          shadowRay.d = wi;
+          shadowRay.tmin = 0.0f;
+          shadowRay.tmax = 1000.0f;
+
+          Intersection shadowHit;
+          float shadow = rayScene(shadowRay, &scene, &shadowHit) && shadowHit.triangle == areaLight;
+          float attenuation = 1.0f / (shadowHit.t * shadowHit.t + 0.001f);
+          
+          color += 0.5f * areaLightCount * throughput * weight * shadow * attenuation * le * bxdfF * fabs(dot(normal, wi));
+        }
+
+        {
+          BxdfSample sample = Bxdf_sample(bxdf, normal, -ray.d, rand2(&seeds[id]));
+          float weight = sample.pdf / (sample.pdf * sample.pdf + lightPdf * lightPdf);
+
+          Ray shadowRay;
+          shadowRay.o = position + normal * 0.0001f;
+          shadowRay.d = sample.wi;
+          shadowRay.tmin = 0.0f;
+          shadowRay.tmax = 1000.0f;
+          
+          Intersection shadowHit;
+          float shadow = rayScene(shadowRay, &scene, &shadowHit) && shadowHit.triangle == areaLight;
+          float attenuation = 1.0f / (shadowHit.t * shadowHit.t + 0.001f);
+
+          color += 0.5f * areaLightCount * throughput * shadow * attenuation * le * weight * sample.f * fabs(dot(normal, sample.wi)); 
+        }
+      }
+
+      BxdfSample sample = Bxdf_sample(bxdf, normal, -ray.d, rand2(&seeds[id]));
+      throughput *= sample.f / sample.pdf * fabs(dot(normal, sample.wi));
+
+      ray.o = position + normal * 0.0001f;
       ray.d = sample.wi;
     } else {
       color += throughput * bgColor;

@@ -52,6 +52,7 @@ enum class BxdfType : uint32_t {
 
 struct Bxdf {
   BxdfType type;
+  alignas(16) glm::vec3 le;
   union {
     DiffuseBrdf diffuseBrdf;
     SpecularBrdf specularBrdf;
@@ -59,22 +60,23 @@ struct Bxdf {
     SpecularBsdf specularBsdf;
   };
 
-  Bxdf(const DiffuseBrdf &bxdf)
-      : type{BxdfType::DIFFUSE_BRDF}, diffuseBrdf{bxdf} {}
+  Bxdf(const DiffuseBrdf &bxdf, glm::vec3 le = glm::vec3{0.0f})
+      : type{BxdfType::DIFFUSE_BRDF}, le{le}, diffuseBrdf{bxdf} {}
 
-  Bxdf(const SpecularBrdf &bxdf)
-      : type{BxdfType::SPECULAR_BRDF}, specularBrdf{bxdf} {}
+  Bxdf(const SpecularBrdf &bxdf, glm::vec3 le = glm::vec3{0.0f})
+      : type{BxdfType::SPECULAR_BRDF}, le{le}, specularBrdf{bxdf} {}
 
-  Bxdf(const SpecularBtdf &bxdf)
-      : type{BxdfType::SPECULAR_BTDF}, specularBtdf{bxdf} {}
+  Bxdf(const SpecularBtdf &bxdf, glm::vec3 le = glm::vec3{0.0f})
+      : type{BxdfType::SPECULAR_BTDF}, le{le}, specularBtdf{bxdf} {}
 
-  Bxdf(const SpecularBsdf &bxdf)
-      : type{BxdfType::SPECULAR_BSDF}, specularBsdf{bxdf} {}
+  Bxdf(const SpecularBsdf &bxdf, glm::vec3 le = glm::vec3{0.0f})
+      : type{BxdfType::SPECULAR_BSDF}, le{le}, specularBsdf{bxdf} {}
 };
 
-static_assert(sizeof(Bxdf) == 64);
-static_assert(offsetof(Bxdf, diffuseBrdf) == 16);
-static_assert(offsetof(Bxdf, specularBrdf) == 16);
-static_assert(offsetof(Bxdf, specularBtdf) == 16);
-static_assert(offsetof(Bxdf, specularBsdf) == 16);
+static_assert(sizeof(Bxdf) == 80);
+static_assert(offsetof(Bxdf, le) == 16);
+static_assert(offsetof(Bxdf, diffuseBrdf) == 32);
+static_assert(offsetof(Bxdf, specularBrdf) == 32);
+static_assert(offsetof(Bxdf, specularBtdf) == 32);
+static_assert(offsetof(Bxdf, specularBsdf) == 32);
 } // namespace pt

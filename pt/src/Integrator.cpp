@@ -35,7 +35,6 @@ cl::Program createProgram() {
 Integrator::Integrator(size_t maxItems)
     : mMaxItems{maxItems},
       mSeedBuffer{CL_MEM_READ_WRITE, mMaxItems * sizeof(glm::uvec2)},
-      mRayBuffer{CL_MEM_READ_ONLY, mMaxItems * sizeof(pt::Ray)},
       mResultBuffer{CL_MEM_WRITE_ONLY, mMaxItems * sizeof(glm::vec4)},
       mProgram{createProgram()},
       mKernel{mProgram, "Li"} {
@@ -60,11 +59,11 @@ void Integrator::Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
 
   cl::NDRange global{(cl::size_type)rayCount};
   cl::EnqueueArgs enqueueArgs{global};
-  auto event =
-      mKernel(enqueueArgs, clImageSize, clTileOffs, clTileSize, clSampleCount,
-              *scene.getCamera(), scene.getBxdfBuffer(),
-              scene.getVertexBuffer(), scene.getTriangleBuffer(),
-              scene.getTriangleCount(), mSeedBuffer, mRayBuffer, mResultBuffer);
+  auto event = mKernel(enqueueArgs, clImageSize, clTileOffs, clTileSize,
+                       clSampleCount, *scene.getCamera(), scene.getBxdfBuffer(),
+                       scene.getVertexBuffer(), scene.getTriangleBuffer(),
+                       scene.getTriangleCount(), scene.getAreaLightBuffer(),
+                       scene.getAreaLightCount(), mSeedBuffer, mResultBuffer);
 
   {
     auto begin = std::chrono::high_resolution_clock::now();
@@ -72,7 +71,7 @@ void Integrator::Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<float> duration = end - begin;
-    //std::cout << "Kernel took " << duration.count() << "s\n";
+    // std::cout << "Kernel took " << duration.count() << "s\n";
   }
 
   {
@@ -82,7 +81,7 @@ void Integrator::Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<float> duration = end - begin;
-    //std::cout << "Result copy took " << duration.count() << "s\n";
+    // std::cout << "Result copy took " << duration.count() << "s\n";
   }
 
   {
@@ -96,7 +95,7 @@ void Integrator::Li(const Scene &scene, Film &film, glm::ivec2 tileOffs,
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<float> duration = end - begin;
-    //std::cout << "Exposure took " << duration.count() << "s\n";
+    // std::cout << "Exposure took " << duration.count() << "s\n";
   }
 }
 

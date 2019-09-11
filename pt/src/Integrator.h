@@ -10,13 +10,12 @@ namespace pt {
 class Integrator {
   size_t mMaxItems;
   cl::Buffer mSeedBuffer;
-  cl::Buffer mRayBuffer;
   cl::Buffer mResultBuffer;
 
   cl::Program mProgram;
   cl::KernelFunctor<cl_int2, cl_int2, cl_int2, cl_int2, Camera, cl::Buffer,
-                    cl::Buffer, cl::Buffer, cl_uint, cl::Buffer, cl::Buffer,
-                    cl::Buffer>
+                    cl::Buffer, cl::Buffer, cl_uint, cl::Buffer, cl_uint,
+                    cl::Buffer, cl::Buffer>
       mKernel;
 
   std::vector<glm::vec4> mResults;

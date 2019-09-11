@@ -11,21 +11,23 @@
 int main() {
   pt::Scene scene;
 
-  auto bxdf = std::make_shared<pt::Bxdf>(pt::DiffuseBrdf{glm::vec3{0.25f}});
-  auto sphereMesh = std::make_shared<pt::Mesh>("res/monkey.obj");
+  auto diffuse = std::make_shared<pt::Bxdf>(pt::DiffuseBrdf{glm::vec3{0.25f}});
+  auto emissive = std::make_shared<pt::Bxdf>(pt::DiffuseBrdf{glm::vec3{0.0f}},
+                                             glm::vec3{1.0f});
+  auto sphereMesh = std::make_shared<pt::Mesh>("res/sphere.obj");
+  auto sceneMesh = std::make_shared<pt::Mesh>("res/cornell.obj");
 
-  auto sphereTransform1 =
-      glm::translate(glm::identity<glm::mat4>(), glm::vec3{-1.0f, 0.0f, 0.0f});
-  auto spherePrimitive1 =
-      std::make_shared<pt::Primitive>(sphereMesh, bxdf, sphereTransform1);
+  auto sphereTransform =
+      glm::scale(glm::identity<glm::mat4>(), glm::vec3{0.1f});
+  auto spherePrimitive =
+      std::make_shared<pt::Primitive>(sphereMesh, emissive, sphereTransform);
 
-  auto sphereTransform2 =
-      glm::translate(glm::identity<glm::mat4>(), glm::vec3{1.0f, 0.0f, 0.0f});
-  auto spherePrimitive2 =
-      std::make_shared<pt::Primitive>(sphereMesh, bxdf, sphereTransform2);
+  auto sceneTransform = glm::identity<glm::mat4>();
+  auto scenePrimitive =
+      std::make_shared<pt::Primitive>(sceneMesh, diffuse, sceneTransform);
 
-  scene.add(spherePrimitive1);
-  scene.add(spherePrimitive2);
+  scene.add(spherePrimitive);
+  scene.add(scenePrimitive);
   scene.updateDeviceRepresentation();
 
   glm::vec3 eye{0.0f, 0.0f, 4.0f};
@@ -47,7 +49,7 @@ int main() {
       (float)film.getSize().x / (float)film.getSize().y);
   scene.setCamera(camera);
 
-  pt::Integrator integrator{64 * 64 * 4 * 4};
+  pt::Integrator integrator{64 * 64 * 8 * 8};
 
   auto begin = std::chrono::high_resolution_clock::now();
   for (auto tileY = 0; tileY < film.getSize().y; tileY += 64) {
@@ -59,7 +61,7 @@ int main() {
       auto maxX = glm::min(tileX + 64, film.getSize().x);
 
       integrator.Li(scene, film, {minX, minY}, {maxX - minX, maxY - minY},
-                    {4, 4});
+                    {8, 8});
     }
   }
   auto end = std::chrono::high_resolution_clock::now();

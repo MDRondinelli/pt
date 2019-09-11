@@ -9,6 +9,8 @@ struct Scene {
   __global const Vertex *vertexBuffer;
   __global const Triangle *triangleBuffer;
   uint triangleCount;
+  __global const uint *areaLightBuffer;
+  uint areaLightCount;
 };
 
 typedef struct Scene Scene;
@@ -19,13 +21,13 @@ bool rayScene(Ray ray, const Scene *scene, Intersection *out) {
   
   for (uint i = 0; i < scene->triangleCount; ++i) {
     if (rayTriangle(ray,
-                    scene->vertexBuffer[scene->triangleBuffer[i].v0],
-                    scene->vertexBuffer[scene->triangleBuffer[i].v1],
-                    scene->vertexBuffer[scene->triangleBuffer[i].v2],
+                    scene->vertexBuffer[scene->triangleBuffer[i].v0].position,
+                    scene->vertexBuffer[scene->triangleBuffer[i].v1].position,
+                    scene->vertexBuffer[scene->triangleBuffer[i].v2].position,
                     &hit) && (!ret || hit.t < out->t)) {
       ret = true;
       *out = hit;
-      out->bxdf = scene->triangleBuffer[i].bxdf;
+      out->triangle = i;
     }
   }
   
